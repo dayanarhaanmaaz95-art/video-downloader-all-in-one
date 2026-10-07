@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 
@@ -14,38 +14,39 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "Clean Direct Stream Engine Active"}
+    return {"status": "Universal Stream Helper Active"}
 
-@app.get("/api/download")
-def download_media(url: str, format: str = "mp4"):
+@app.post("/api/extract")
+def extract_media(payload: dict):
+    url = payload.get("url")
+    quality = payload.get("quality", "1080")
+    is_audio = payload.get("isAudio", False)
+
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
-    
-    # Clean Cobalt / Direct Engine Node
-    payload = {
+
+    req_body = {
         "url": url,
-        "videoQuality": "1080",
-        "downloadMode": "audio" if format == "mp3" else "auto"
+        "videoQuality": quality,
+        "downloadMode": "audio" if is_audio else "auto"
     }
 
-    try:
-        res = requests.post("https://co.wuk.sh/api/json", json=payload, headers=headers, timeout=10)
-        data = res.json()
-        if "url" in data:
-            return {"status": "success", "url": data["url"]}
-    except Exception:
-        pass
+    instances = [
+        "https://co.wuk.sh/api/json",
+        "https://api.cobalt.tools/api/json",
+        "https://cobalt-api.kwippy.com/api/json"
+    ]
 
-    # Backup Engine
-    try:
-        res2 = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=10)
-        data2 = res2.json()
-        if "url" in data2:
-            return {"status": "success", "url": data2["url"]}
-    except Exception:
-        pass
+    for endpoint in instances:
+        try:
+            res = requests.post(endpoint, json=req_body, headers=headers, timeout=8)
+            data = res.json()
+            if "url" in data:
+                return {"status": "success", "url": data["url"]}
+        except Exception:
+            continue
 
-    raise HTTPException(status_code=400, detail="Unable to extract direct link")
+    return {"status": "error", "message": "Unable to extract direct stream link"}
