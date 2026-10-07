@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 import requests
 
 app = FastAPI()
@@ -15,12 +14,16 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "Universal Direct Engine Active"}
+    return {"status": "Ad-Free Clean Engine Active"}
 
-@app.get("/api/download")
-def download_media(url: str, quality: str = "1080", format: str = "mp4"):
+@app.post("/api/get-direct-link")
+def get_direct_link(payload: dict):
+    url = payload.get("url")
+    quality = payload.get("quality", "1080")
+    format_type = payload.get("format", "mp4")
+
     if not url:
-        raise HTTPException(status_code=400, detail="URL missing")
+        raise HTTPException(status_code=400, detail="URL is required")
 
     headers = {
         "Accept": "application/json",
@@ -31,10 +34,10 @@ def download_media(url: str, quality: str = "1080", format: str = "mp4"):
     req_body = {
         "url": url,
         "videoQuality": quality,
-        "downloadMode": "audio" if format == "mp3" else "auto"
+        "downloadMode": "audio" if format_type == "mp3" else "auto"
     }
 
-    # Fast High-Speed Global Stream Endpoints
+    # Strict Clean Instances (No Loader.to Ads Fallback)
     instances = [
         "https://co.wuk.sh/api/json",
         "https://api.cobalt.tools/api/json",
@@ -47,12 +50,8 @@ def download_media(url: str, quality: str = "1080", format: str = "mp4"):
             if res.status_code == 200:
                 data = res.json()
                 if "url" in data:
-                    # Direct redirect to real media file server (Prevents 28 KB empty file)
-                    return RedirectResponse(url=data["url"])
+                    return {"status": "success", "url": data["url"]}
         except Exception:
             continue
 
-    # Fallback to direct stream node
-    encoded_url = requests.utils.quote(url)
-    fallback_url = f"https://loader.to/api/button/?url={encoded_url}&f={format}&q={quality}"
-    return RedirectResponse(url=fallback_url)
+    return {"status": "error", "message": "Server busy. Please try another link."}
