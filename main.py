@@ -20,17 +20,11 @@ def home():
 
 @app.get("/api/download")
 def download_media(url: str, format: str = "mp4"):
-    # Engine 1: Native YoutubeDL with iOS User-Agent Client (Bypasses YouTube Bot Block)
     ydl_opts = {
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best' if format == "mp4" else 'bestaudio/best',
         'quiet': True,
         'no_warnings': True,
-        'user_agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios', 'mweb', 'android']
-            }
-        }
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     
     try:
@@ -59,10 +53,10 @@ def download_media(url: str, format: str = "mp4"):
     except Exception:
         pass
 
-    # Engine 2: High Speed Global Fallback Node (Guaranteed Instant Download)
+    # Direct Fast Download Fallback Engine
     encoded_url = requests.utils.quote(url)
     if "youtube.com" in url or "youtu.be" in url:
-        fallback_stream = f"https://loader.to/api/button/?url={encoded_url}&f={format}"
+        fallback_stream = f"https://loader.to/api/card/?url={encoded_url}&f={format}"
     else:
         fallback_stream = f"https://cobalt.tools/api/json"
     
