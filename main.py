@@ -1,8 +1,7 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse
 import requests
-import re
 
 app = FastAPI()
 
@@ -16,7 +15,7 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "Universal Direct Engine Running"}
+    return {"status": "Universal Direct Engine Active"}
 
 @app.get("/api/download")
 def download_media(url: str, quality: str = "1080", format: str = "mp4"):
@@ -35,43 +34,25 @@ def download_media(url: str, quality: str = "1080", format: str = "mp4"):
         "downloadMode": "audio" if format == "mp3" else "auto"
     }
 
-    # Clean Stream Extractors
+    # Fast High-Speed Global Stream Endpoints
     instances = [
         "https://co.wuk.sh/api/json",
         "https://api.cobalt.tools/api/json",
         "https://cobalt-api.kwippy.com/api/json"
     ]
 
-    direct_file_url = None
-
     for endpoint in instances:
         try:
-            res = requests.post(endpoint, json=req_body, headers=headers, timeout=10)
+            res = requests.post(endpoint, json=req_body, headers=headers, timeout=8)
             if res.status_code == 200:
                 data = res.json()
                 if "url" in data:
-                    direct_file_url = data["url"]
-                    break
+                    # Direct redirect to real media file server (Prevents 28 KB empty file)
+                    return RedirectResponse(url=data["url"])
         except Exception:
             continue
 
-    if not direct_file_url:
-        # Fallback for Universal Links
-        encoded_url = requests.utils.quote(url)
-        direct_file_url = f"https://loader.to/api/button/?url={encoded_url}&f={format}&q={quality}"
-
-    # Stream file through backend to force direct file saving in browser (No new tab)
-    try:
-        stream_res = requests.get(direct_file_url, stream=True, timeout=15)
-        ext = "mp3" if format == "mp3" else "mp4"
-        filename = f"video_download_{quality}p.{ext}"
-
-        return StreamingResponse(
-            stream_res.iter_content(chunk_size=1024*1024),
-            media_type="application/octet-stream",
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            }
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+    # Fallback to direct stream node
+    encoded_url = requests.utils.quote(url)
+    fallback_url = f"https://loader.to/api/button/?url={encoded_url}&f={format}&q={quality}"
+    return RedirectResponse(url=fallback_url)
