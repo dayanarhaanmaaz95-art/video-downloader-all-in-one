@@ -12,9 +12,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# RapidAPI Details
+RAPIDAPI_URL = "https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink"
+# Aapki RapidAPI key playground window se automatically link ho jaayegi
+RAPIDAPI_KEY = "YOUR_RAPIDAPI_KEY"  # Isse apni RapidAPI key se replace karein
+
 @app.get("/")
 def home():
-    return {"status": "Clean Direct Engine Active"}
+    return {"status": "RapidAPI Engine Active"}
 
 @app.post("/api/get-direct-link")
 def get_direct_link(payload: dict):
@@ -23,38 +28,40 @@ def get_direct_link(payload: dict):
     format_type = payload.get("format", "mp4")
 
     if not url:
-        raise HTTPException(status_code=400, detail="URL missing")
-
-    # Clean URL tracking parameters
-    clean_url = url.split("?")[0] if ("youtube.com/shorts/" in url or "youtu.be/" in url) else url
+        raise HTTPException(status_code=400, detail="URL is missing")
 
     headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": "social-download-all-in-one.p.rapidapi.com",
+        "Content-Type": "application/json"
     }
 
-    req_body = {
-        "url": clean_url,
-        "videoQuality": quality,
-        "downloadMode": "audio" if format_type == "mp3" else "auto"
-    }
+    try:
+        response = requests.post(RAPIDAPI_URL, json={"url": url}, headers=headers, timeout=10)
+        data = response.json()
 
-    # Only Clean Public Nodes (NO AD-SUPPORTED FALLBACKS)
-    instances = [
-        "https://co.wuk.sh/api/json",
-        "https://api.cobalt.tools/api/json",
-        "https://cobalt-api.kwippy.com/api/json"
-    ]
+        if "medias" in data and len(data["medias"]) > 0:
+            medias = data["medias"]
+            download_url = None
 
-    for endpoint in instances:
-        try:
-            res = requests.post(endpoint, json=req_body, headers=headers, timeout=10)
-            if res.status_code == 200:
-                data = res.json()
-                if "url" in data:
-                    return {"status": "success", "url": data["url"]}
-        except Exception:
-            continue
+            if format_type == "mp3":
+                for item in medias:
+                    if item.get("extension") == "mp3" or item.get("quality") == "audio":
+                        download_url = item.get("url")
+                        break
+            else:
+                # Video quality filter based on response
+                if quality == "1080" or quality == "720":
+                    download_url = medias[0].get("url")  # hd_no_watermark / high quality
+                else:
+                    download_url = medias[1].get("url") if len(medias) > 1 else medias[0].get("url")
 
-    raise HTTPException(status_code=500, detail="Server busy. Please try another link.")
+            if not download_url:
+                download_url = medias[0].get("url")
+
+            return {"status": "success", "url": download_url}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"status": "error", "message": "Failed to fetch link"}
