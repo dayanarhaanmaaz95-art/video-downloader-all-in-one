@@ -14,7 +14,7 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {"status": "Ad-Free Clean Engine Active"}
+    return {"status": "Clean Direct Engine Active"}
 
 @app.post("/api/get-direct-link")
 def get_direct_link(payload: dict):
@@ -23,7 +23,7 @@ def get_direct_link(payload: dict):
     format_type = payload.get("format", "mp4")
 
     if not url:
-        raise HTTPException(status_code=400, detail="URL is required")
+        raise HTTPException(status_code=400, detail="URL missing")
 
     headers = {
         "Accept": "application/json",
@@ -37,7 +37,7 @@ def get_direct_link(payload: dict):
         "downloadMode": "audio" if format_type == "mp3" else "auto"
     }
 
-    # Strict Clean Instances (No Loader.to Ads Fallback)
+    # Clean Public Engine Instances
     instances = [
         "https://co.wuk.sh/api/json",
         "https://api.cobalt.tools/api/json",
@@ -54,4 +54,4 @@ def get_direct_link(payload: dict):
         except Exception:
             continue
 
-    return {"status": "error", "message": "Server busy. Please try another link."}
+    return {"status": "error", "message": "Direct link not found"}
